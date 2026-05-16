@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files (secrets)
+.env
+.env.local
+
+# dlt secrets (config.toml is fine to commit)
+.dlt/secrets.toml
+
+# DuckDB warehouse
+*.duckdb
+*.duckdb.wal
+
+# dbt (later phases)
+target/
+dbt_packages/
+logs/
+*.log
+
+# Dagster (later phases)
+.dagster_home/
+dagster_home/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
