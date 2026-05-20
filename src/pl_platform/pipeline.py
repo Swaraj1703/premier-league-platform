@@ -14,20 +14,29 @@ from pl_platform.api_client import FootballDataClient
 logger = logging.getLogger(__name__)
 
 
+def _current_pl_season() -> int:
+    """Return the start year of the current PL season (seasons begin in August)."""
+    today = date.today()
+    return today.year if today.month >= 8 else today.year - 1
+
+
 @dlt.source(name="football_data")
 def football_data_source(
     client: FootballDataClient,
     date_from: date | None = None,
     date_to: date | None = None,
+    season: int | None = None,
 ):
     """One source per vendor; resources share auth + rate limiter via `client`.
 
-    `date_from` / `date_to` default to the last 30 days and only affect
-    the `matches` resource.
+    Defaults:
+    - `date_from` / `date_to` → last 30 days, only affect `matches`
+    - `season` → current PL season (Aug-Jul boundary), only affects `scorers`
     """
 
     effective_to = date_to or date.today()
     effective_from = date_from or (effective_to - timedelta(days=30))
+    effective_season = _current_pl_season() if season is None else season
 
     @dlt.resource(name="competitions", write_disposition="replace")
     def competitions():
@@ -54,7 +63,14 @@ def football_data_source(
         response = client.get_matches(effective_from, effective_to, "PL")
         yield from response["matches"]
 
-    return (competitions, teams, matches)
+    @dlt.resource(name="scorers", write_disposition="replace")
+    def scorers():
+        """Fetch top scorers leaderboard for the configured PL season."""
+        logger.info("Fetching top scorers for PL season %d", effective_season)
+        response = client.get_scorers(effective_season, "PL")
+        yield from response["scorers"]
+
+    return (competitions, teams, matches, scorers)
 
 
 def run_pipeline() -> None:
