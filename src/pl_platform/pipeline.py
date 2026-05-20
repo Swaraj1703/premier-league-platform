@@ -18,7 +18,7 @@ def football_data_source(client: FootballDataClient):
     """One source per vendor; resources share auth + rate limiter via `client`.
 
     Adding new endpoints later means adding new @dlt.resource functions inside
-    this source and returning them alongside `competitions`.
+    this source and returning them in the tuple alongside `competitions`.
     """
 
     @dlt.resource(name="competitions", write_disposition="replace")
@@ -27,7 +27,7 @@ def football_data_source(client: FootballDataClient):
         logger.info("Fetching competition metadata for PL")
         yield client.get_competition("PL")
 
-    return competitions
+    return (competitions,)
 
 
 def run_pipeline() -> None:
@@ -41,12 +41,12 @@ def run_pipeline() -> None:
         dataset_name="raw_football",
     )
 
-    client = FootballDataClient()
-    source = football_data_source(client)
+    with FootballDataClient() as client:
+        source = football_data_source(client)
 
-    logger.info("Starting pipeline run")
-    info = pipeline.run(source)
-    logger.info("Pipeline run complete:\n%s", info)
+        logger.info("Starting pipeline run")
+        info = pipeline.run(source)
+        logger.info("Pipeline run complete:\n%s", info)
 
 
 if __name__ == "__main__":
