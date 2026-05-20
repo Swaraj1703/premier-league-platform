@@ -15,11 +15,7 @@ logger = logging.getLogger(__name__)
 
 @dlt.source(name="football_data")
 def football_data_source(client: FootballDataClient):
-    """One source per vendor; resources share auth + rate limiter via `client`.
-
-    Adding new endpoints later means adding new @dlt.resource functions inside
-    this source and returning them in the tuple alongside `competitions`.
-    """
+    """One source per vendor; resources share auth + rate limiter via `client`."""
 
     @dlt.resource(name="competitions", write_disposition="replace")
     def competitions():
@@ -27,7 +23,14 @@ def football_data_source(client: FootballDataClient):
         logger.info("Fetching competition metadata for PL")
         yield client.get_competition("PL")
 
-    return (competitions,)
+    @dlt.resource(name="teams", write_disposition="replace")
+    def teams():
+        """Fetch all teams competing in Premier League."""
+        logger.info("Fetching teams for PL")
+        response = client.get_teams("PL")
+        yield from response["teams"]
+
+    return (competitions, teams)
 
 
 def run_pipeline() -> None:
