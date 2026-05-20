@@ -4,6 +4,7 @@ Run with: python -m pl_platform.pipeline
 """
 
 import logging
+from datetime import date, timedelta
 from pathlib import Path
 
 import dlt
@@ -14,8 +15,19 @@ logger = logging.getLogger(__name__)
 
 
 @dlt.source(name="football_data")
-def football_data_source(client: FootballDataClient):
-    """One source per vendor; resources share auth + rate limiter via `client`."""
+def football_data_source(
+    client: FootballDataClient,
+    date_from: date | None = None,
+    date_to: date | None = None,
+):
+    """One source per vendor; resources share auth + rate limiter via `client`.
+
+    `date_from` / `date_to` default to the last 30 days and only affect
+    the `matches` resource.
+    """
+
+    effective_to = date_to or date.today()
+    effective_from = date_from or (effective_to - timedelta(days=30))
 
     @dlt.resource(name="competitions", write_disposition="replace")
     def competitions():
@@ -30,12 +42,23 @@ def football_data_source(client: FootballDataClient):
         response = client.get_teams("PL")
         yield from response["teams"]
 
-    return (competitions, teams)
+    @dlt.resource(name="matches", write_disposition="merge", primary_key="id")
+    def matches():
+        """Fetch matches in the configured date range (defaults to last 30 days).
+
+        NOTE: Merge only refreshes matches inside the current window. Matches
+        outside it can become stale. Phase 3 (Dagster) will combine a wide
+        initial backfill with a rolling 30-day window for subsequent runs.
+        """
+        logger.info("Fetching matches from %s to %s for PL", effective_from, effective_to)
+        response = client.get_matches(effective_from, effective_to, "PL")
+        yield from response["matches"]
+
+    return (competitions, teams, matches)
 
 
 def run_pipeline() -> None:
     """Execute the ingestion pipeline."""
-    # Ensure data/ exists for the DuckDB file
     Path("data").mkdir(exist_ok=True)
 
     pipeline = dlt.pipeline(
