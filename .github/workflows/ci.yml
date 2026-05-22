@@ -30,3 +30,9 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -v
+
+      - name: Install dbt packages
+        run: dbt deps --project-dir dbt
+
+      - name: Run dbt parse
+        run: dbt parse --project-dir dbt --profiles-dir dbt

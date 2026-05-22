@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: raw_football
+    description: "Raw tables produced by the dlt pipeline from football-data.org"
+    database: warehouse
+    schema: raw_football
+    tables:
+      - name: competitions
+        description: "One row per competition (currently only PL)"
+      - name: competitions__seasons
+        description: "Historical seasons nested inside competitions; child of competitions"
+      - name: teams
+        description: "All teams in the competition"
+      - name: teams__squad
+        description: "Player rosters nested inside each team; child of teams"
+      - name: teams__running_competitions
+        description: "Competitions each team is currently in; child of teams"
+      - name: matches
+        description: "Fixtures and results within the configured date window"
+      - name: matches__referees
+        description: "Referees assigned to each match; child of matches"
+      - name: scorers
+        description: "Top-scorers leaderboard for the configured season"
