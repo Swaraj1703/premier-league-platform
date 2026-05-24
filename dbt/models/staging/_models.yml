@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: stg_competitions
+    description: "Staging view for Premier League competition metadata."
+    columns:
+      - name: competition_sk
+        description: "Surrogate key. Hash of competition_id."
+        tests:
+          - not_null
+          - unique
+      - name: competition_id
+        tests:
+          - not_null
+
+  - name: stg_teams
+    description: "Staging view for Premier League teams (metadata, current season)."
+    columns:
+      - name: team_sk
+        description: "Surrogate key. Hash of team_id."
+        tests:
+          - not_null
+          - unique
+      - name: team_id
+        tests:
+          - not_null
+
+  - name: stg_matches
+    description: "Staging view for Premier League matches (rolling 30-day window per dlt merge disposition)."
+    columns:
+      - name: match_sk
+        description: "Surrogate key. Hash of match_id."
+        tests:
+          - not_null
+          - unique
+      - name: match_id
+        tests:
+          - not_null
+
+  - name: stg_scorers
+    description: "Staging view for current PL season top scorers. See #23 for upcoming widening of player_sk to composite key."
+    columns:
+      - name: player_sk
+        description: "Surrogate key. Currently hash of player_id alone; widens to [player_id, competition_id, season_id] once issue #23 lands."
+        tests:
+          - not_null
+          - unique
+      - name: player_id
+        tests:
+          - not_null
